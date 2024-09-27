@@ -1,9 +1,12 @@
 #include "pwm_reg.hpp"
+#include <libhal-arm-mcu/stm32f1/clock.hpp>
 #include <libhal-arm-mcu/stm32f1/constants.hpp>
 #include <libhal-arm-mcu/stm32f1/pwm.hpp>
-#include <libhal-arm-mcu/stm32f1/clock.hpp>
+#include <libhal-util/bit.hpp>
+#include "power.hpp"
 
 namespace hal::stm32f1 {
+namespace {
 [[nodiscard]] pwm_reg_t* get_pwm_reg(peripheral p_id)
 {
   if (p_id == peripheral::timer1) {
@@ -13,10 +16,35 @@ namespace hal::stm32f1 {
   return pwm_timer8;
 }
 
-pwm::pwm(std::uint8_t p_peripheral, std::uint8_t p_channel)
-  : m_channel{}
+[[nodiscard]] uint32_t volatile& get_capture_compare_register(
+  pwm::channel p_channel,
+  pwm_reg_t* p_reg)
 {
-  setup(p_channel);
+  if (p_channel.index == 1) {
+    return p_reg->capture_compare_register;
+  } else if (p_channel.index == 2) {
+    return p_reg->capture_compare_register_2;
+  } else if (p_channel.index == 3) {
+    return p_reg->capture_compare_register_3;
+  } else {
+    return p_reg->capture_compare_register_4;
+  }
+}
+[[nodiscard]] float get_duty_cycle(pwm::channel p_channel, pwm_reg_t* p_reg)
+{
+  // ccr / arr
+  std::uint32_t compare_register =
+    get_capture_compare_register(p_channel, p_reg);
+
+  static constexpr auto first_nonreserved_half = bit_mask::from<0, 15>();
+
+  std::uint16_t compare_value = hal::bit_extract<first_nonreserved_half>(
+    compare_register);  // gets the first 16 bits of CCR register
+
+  std::uint16_t arr_value = hal::bit_extract<first_nonreserved_half>(
+    p_reg->auto_reload_register);  // gets the first 16 bits of CCR register
+
+  return compare_value / arr_value;
 }
 void setup(pwm::channel& p_channel)
 {
@@ -28,7 +56,7 @@ void setup(pwm::channel& p_channel)
   // before starting the counter, the user has to initialize all the registers
   // by setting the UG bit in the TIMx_EGR register.
   static constexpr auto clock_division = bit_mask::from<8, 9>();
-  static constexpr auto auto_reload_preload_enable = bit::mask::from<7>();
+  static constexpr auto auto_reload_preload_enable = bit_mask::from<7>();
   static constexpr auto edge_aligned_mode = bit_mask::from<5, 6>();  // set to
                                                                      // 00
   static constexpr auto direction =
@@ -76,28 +104,48 @@ void setup(pwm::channel& p_channel)
 
   //
 }
+}  // namespace
+
+pwm::pwm(std::uint8_t p_peripheral, std::uint8_t p_channel)
+  : m_channel{}
+{ 
+  // need to map peripheral to output pins
+
+  setup(p_channel);
+}
 void pwm::driver_frequency(hertz p_frequency)
 {
   pwm_reg_t* reg = get_pwm_reg(m_channel.peripheral_id);
   // mask for the ARR that needs to be set
-  static constexpr auto arr_mask = bit_mask::from<0,15>();
+  static constexpr auto arr_mask = bit_mask::from<0, 15>();
   // current clock frequency
-  auto const current_clock = frequency(m_channel.peripheral_id);
+  auto const current_clock = hal::stm32f1::frequency(m_channel.peripheral_id);
+
+  float previous_duty_cycle = get_duty_cycle(m_channel, reg);
 
   if (p_frequency >= current_clock) {
     safe_throw(hal::operation_not_supported(this));
   }
-  
+
   // change ARR register
   std::uint16_t desired_arr_value = current_clock / p_frequency;
 
-  //update ARR register to have new calculated ARR value
+  // update ARR register to have new calculated ARR value
   bit_modify(reg->auto_reload_register).insert<arr_mask>(desired_arr_value);
 
-  
+  // need to update duty cycle according to new frequency
+  driver_duty_cycle(previous_duty_cycle);
 }
 void pwm::driver_duty_cycle(float p_duty_cycle)
 {
+  pwm_reg_t* reg = get_pwm_reg(m_channel.peripheral_id);
+  // current ARR value
+  static constexpr auto ccr_mask = bit_mask::from<0, 15>();
 
+  std::uint16_t desired_ccr_value = reg->auto_reload_register * p_duty_cycle;
+
+  std::uint32_t compare_register = get_capture_compare_register(m_channel, reg);
+
+  bit_modify(compare_register).insert<ccr_mask>(desired_ccr_value);
 }
 }  // namespace hal::stm32f1

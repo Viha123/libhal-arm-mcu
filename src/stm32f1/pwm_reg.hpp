@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <cstdint>
 namespace hal::stm32f1 {
 /**
  * @brief Register map ofr the stm32f1 PWM (TIM1 and TIM8)

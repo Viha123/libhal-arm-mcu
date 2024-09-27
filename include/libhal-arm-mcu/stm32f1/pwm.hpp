@@ -28,9 +28,9 @@ public:
   struct channel
   {
     peripheral peripheral_id;
-    pin pwm_pin;
+    // pin pwm_pin;
     uint8_t index;
-    uint8_t pin_function;
+    // uint8_t pin_function;
   };
 
   pwm(std::uint8_t p_peripheral, std::uint8_t p_channel);
