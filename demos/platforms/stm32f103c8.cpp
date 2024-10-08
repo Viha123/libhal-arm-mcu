@@ -24,7 +24,7 @@
 #include <libhal-arm-mcu/system_control.hpp>
 #include <libhal-soft/bit_bang_i2c.hpp>
 #include <libhal-soft/inert_drivers/inert_adc.hpp>
-
+#include <libhal-arm-mcu/stm32f1/pwm.hpp>
 #include <libhal/output_pin.hpp>
 #include <libhal/units.hpp>
 #include <resource_list.hpp>
@@ -81,6 +81,10 @@ void initialize_platform(resource_list& p_resources)
                                 });
   p_resources.spi = &spi1;
 
+  static hal::stm32f1::pwm pwm(hal::stm32f1::pwm_pins::pa8);
+
+  p_resources.pwm = &pwm;
+  
   static hal::stm32f1::output_pin spi_chip_select('A', 4);
   p_resources.spi_chip_select = &spi_chip_select;
 }

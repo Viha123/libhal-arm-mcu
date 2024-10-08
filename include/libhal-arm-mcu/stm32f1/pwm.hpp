@@ -25,15 +25,15 @@ namespace hal::stm32f1 {
 class pwm final : public hal::pwm
 {
 public:
-  struct channel
-  {
-    peripheral peripheral_id;
-    // pin pwm_pin;
-    uint8_t index;
-    // uint8_t pin_function;
-  };
+  // struct channel
+  // {
+  //   peripheral peripheral_id;
+  //   // pin pwm_pin;
+  //   uint8_t index;
+  //   // uint8_t pin_function;
+  // };
 
-  pwm(std::uint8_t p_peripheral, std::uint8_t p_channel);
+  pwm(pwm_pins pwm_pin);
 
   pwm(pwm const& p_other) = delete;  // deletes the copy constructor
   pwm& operator=(pwm const& p_other) = delete;
@@ -45,6 +45,6 @@ private:
   void driver_frequency(hertz p_frequency) override;
   void driver_duty_cycle(float p_duty_cycle) override;
 
-  channel m_channel;
+  pwm_pins m_pin;
 };
 }
