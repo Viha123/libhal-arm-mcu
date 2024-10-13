@@ -49,6 +49,7 @@ void initialize_platform(resource_list& p_resources)
   p_resources.can = &can;
 
   static hal::stm32f1::output_pin led('C', 13);
+
   p_resources.status_led = &led;
 
   // pin G0 on the STM micromod is port B, pin 4
@@ -84,7 +85,9 @@ void initialize_platform(resource_list& p_resources)
   static hal::stm32f1::pwm pwm(hal::stm32f1::pwm_pins::pa8);
 
   p_resources.pwm = &pwm;
-  
+
   static hal::stm32f1::output_pin spi_chip_select('A', 4);
   p_resources.spi_chip_select = &spi_chip_select;
+
+  return;
 }

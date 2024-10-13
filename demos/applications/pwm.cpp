@@ -25,21 +25,30 @@ void application(resource_list& p_map)
   auto& pwm = *p_map.pwm.value();
   auto& clock = *p_map.clock.value();
 
+  auto& serial = *p_map.console.value();
+  hal::print(serial, "HELLO PWM starting\n");
   while (true) {
+
     pwm.frequency(1.0_kHz);
+    hal::print(serial, "Setting 1KHZ frequency\n");
 
     for (unsigned iteration = 0; iteration <= 100; iteration += 1) {
       auto duty_cycle = static_cast<float>(iteration) / 100.0f;
       pwm.duty_cycle(duty_cycle);
-      hal::delay(clock, 100ms);
+      hal::delay(clock, 1000ms);
+      hal::print(serial, "changed duty cycle\n");
+
     }
 
     pwm.duty_cycle(0.5f);
+    hal::print(serial, "Setting 0.5 duty cycle\n");
 
     for (unsigned iteration = 0; iteration < 100; iteration++) {
       auto frequency = 100.0_Hz * (static_cast<float>(iteration) * 10);
       pwm.frequency(frequency);
-      hal::delay(clock, 100ms);
+      hal::delay(clock, 1000ms);
+      hal::print(serial, "changed frequency\n");
+
     }
   }
 }

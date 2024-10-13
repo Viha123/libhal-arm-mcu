@@ -46,5 +46,7 @@ private:
   void driver_duty_cycle(float p_duty_cycle) override;
 
   pwm_pins m_pin;
+  uint8_t m_channel;
+  volatile uint32_t* m_compare_register_addr;
 };
 }
