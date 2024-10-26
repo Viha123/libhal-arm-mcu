@@ -60,33 +60,33 @@ void setup_channel(pwm_reg_t* p_reg, uint8_t p_channel)
     p_channel) {  // not proud of this code but the from was marked consteexpr
                   // and it didn't let me do from(start_pos, start_pos + 1);
     case 1:
-      static constexpr auto ccer_polarity_enable_mask = bit_mask::from(0, 1);
-      static constexpr auto ccer_comp_polarity_enable_mask =
-        bit_mask::from(2, 3);
+      static constexpr auto ccer_penable_mask = bit_mask::from(0);
+      // static constexpr auto ccer_comp_polarity_enable_mask =
+      //   bit_mask::from(2, 3);
 
-      bit_modify(p_reg->cc_enable_register).insert<ccer_polarity_enable_mask>(0b11U);
-      bit_modify(p_reg->cc_enable_register)
-        .clear(ccer_comp_polarity_enable_mask);
+      bit_modify(p_reg->cc_enable_register).set(ccer_penable_mask);
+      // bit_modify(p_reg->cc_enable_register)
+      //   .insert<ccer_comp_polarity_enable_mask>(0b00U);
 
       break;
     case 2:
       static constexpr auto ccer_polarity_enable_mask_2 = bit_mask::from(4, 5);
-      static constexpr auto ccer_comp_polarity_enable_mask_2 =
-        bit_mask::from(6, 7);
+      // static constexpr auto ccer_comp_polarity_enable_mask_2 =
+      //   bit_mask::from(6, 7);
 
       bit_modify(p_reg->cc_enable_register).insert<ccer_polarity_enable_mask_2>(0b11U);
-      bit_modify(p_reg->cc_enable_register)
-        .clear(ccer_comp_polarity_enable_mask_2);
+      // bit_modify(p_reg->cc_enable_register)
+      //   .insert<ccer_comp_polarity_enable_mask_2>(0b00U);
 
       break;
     case 3:
       static constexpr auto ccer_polarity_enable_mask_3 = bit_mask::from(8, 9);
-      static constexpr auto ccer_comp_polarity_enable_mask_3 =
-        bit_mask::from(10, 11);
+      // static constexpr auto ccer_comp_polarity_enable_mask_3 =
+      //   bit_mask::from(10, 11);
 
       bit_modify(p_reg->cc_enable_register).insert<ccer_polarity_enable_mask_3>(0b11U);
-      bit_modify(p_reg->cc_enable_register)
-        .clear(ccer_comp_polarity_enable_mask_3);
+      // bit_modify(p_reg->cc_enable_register)
+      //   .insert<ccer_comp_polarity_enable_mask_3>(0b00U);
 
       break;
     case 4:
@@ -123,8 +123,10 @@ void setup(pwm_pins p_pin)
     bit_mask::from<12, 14>();  // set to 111 for channel2/4 is inactive as long
                                // as timx_cnt < tmx_ccr1
   static constexpr auto counter_enable = bit_mask::from<0>();  // set this to 1
-  static constexpr auto odd_channel_preload_enable = bit_mask::from<3>();
-  static constexpr auto even_channel_preload_enable = bit_mask::from<11>();
+  static constexpr auto clear_flag = bit_mask::from<1>();  // set this to 1
+                                                               // 
+  // static constexpr auto odd_channel_preload_enable = bit_mask::from<3>();
+  // static constexpr auto even_channel_preload_enable = bit_mask::from<11>();
   // static constexpr auto update_generation_enable = bit_mask::from<0>();
 
   peripheral peripheral_id = get_peripheral_id(p_pin);
@@ -132,12 +134,13 @@ void setup(pwm_pins p_pin)
 
   bit_modify(reg->control_register).insert<clock_division>(0b00U);  //
   bit_modify(reg->control_register).insert<edge_aligned_mode>(0b00U);
-  bit_modify(reg->control_register).clear(direction);
+  bit_modify(reg->control_register).clear(direction); //direction up
 
   // before starting the counter, the user must initialize all the registers by
   // setting the UG bit in the TIMx_EGR register.
   bit_modify(reg->event_generator_register).set(counter_enable);
 
+  bit_modify(reg->status_register).clear(clear_flag);
 
   // OCxM bit set : PWM mode 2 - In upcounting, channel 1 is inactive as long as
   // TIMx_CNT<TIMx_CCR1 else active.
@@ -146,26 +149,26 @@ void setup(pwm_pins p_pin)
                                  //  set oc1m bit to
     // Preload enable must be done for corresponding OCxPE
     bit_modify(reg->capture_compare_mode_register).insert<output_compare_odd>(0b111U);
-    bit_modify(reg->capture_compare_mode_register)
-      .set(odd_channel_preload_enable);
+    // bit_modify(reg->capture_compare_mode_register)
+    //   .set(odd_channel_preload_enable);
     setup_channel(reg, 1);
     // leaving polarity active low for each channel
   } else if (p_pin == pwm_pins::pa9) {  // channel 2
     bit_modify(reg->capture_compare_mode_register).insert<output_compare_even>(0b111U);
-    bit_modify(reg->capture_compare_mode_register)
-      .set(even_channel_preload_enable);
+    // bit_modify(reg->capture_compare_mode_register)
+    //   .set(even_channel_preload_enable);
     setup_channel(reg, 2);
 
   } else if (p_pin == pwm_pins::pa10) {  // channel 3
     bit_modify(reg->capture_compare_mode_register_2).insert<output_compare_odd>(0b111U);
-    bit_modify(reg->capture_compare_mode_register_2)
-      .set(odd_channel_preload_enable);
+    // bit_modify(reg->capture_compare_mode_register_2)
+    //   .set(odd_channel_preload_enable);
     setup_channel(reg, 3);
 
   } else if (p_pin == pwm_pins::pa11) {  // channel 4
     bit_modify(reg->capture_compare_mode_register_2).insert<output_compare_even>(0b111U);
-    bit_modify(reg->capture_compare_mode_register_2)
-      .set(even_channel_preload_enable);
+    // bit_modify(reg->capture_compare_mode_register_2)
+    //   .set(even_channel_preload_enable);
     setup_channel(reg, 4);
   }
 
