@@ -55,51 +55,62 @@ void setup_channel(pwm_reg_t* p_reg, uint8_t p_channel)
 
   // uint32_t start_pos = 4 * (p_channel - 1);
   static constexpr auto main_output_enable = bit_mask::from<15>();
+  // bit_modify(p_reg->break_and_deadtime_register)
+  //   .insert<main_output_enable>(0b1U);
   static constexpr auto ossr = bit_mask::from<11>();
   switch (
     p_channel) {  // not proud of this code but the from was marked consteexpr
                   // and it didn't let me do from(start_pos, start_pos + 1);
     case 1:
-      static constexpr auto ccer_penable_mask = bit_mask::from(0);
+      static constexpr auto ccer_polarity_enable_mask = bit_mask::from(0, 1);
       // static constexpr auto ccer_comp_polarity_enable_mask =
       //   bit_mask::from(2, 3);
 
-      bit_modify(p_reg->cc_enable_register).set(ccer_penable_mask);
+      bit_modify(p_reg->cc_enable_register)
+        .insert<ccer_polarity_enable_mask>(0b01U);
       // bit_modify(p_reg->cc_enable_register)
-      //   .insert<ccer_comp_polarity_enable_mask>(0b00U);
+      //   .clear(ccer_comp_polarity_enable_mask);
 
       break;
     case 2:
       static constexpr auto ccer_polarity_enable_mask_2 = bit_mask::from(4, 5);
       // static constexpr auto ccer_comp_polarity_enable_mask_2 =
-      //   bit_mask::from(6, 7);
+        // bit_mask::from(6, 7);
 
-      bit_modify(p_reg->cc_enable_register).insert<ccer_polarity_enable_mask_2>(0b11U);
+      bit_modify(p_reg->cc_enable_register)
+        .insert<ccer_polarity_enable_mask_2>(0b01U);
       // bit_modify(p_reg->cc_enable_register)
-      //   .insert<ccer_comp_polarity_enable_mask_2>(0b00U);
+      //   .clear(ccer_comp_polarity_enable_mask_2);
 
       break;
     case 3:
       static constexpr auto ccer_polarity_enable_mask_3 = bit_mask::from(8, 9);
       // static constexpr auto ccer_comp_polarity_enable_mask_3 =
-      //   bit_mask::from(10, 11);
+        // bit_mask::from(10, 11);
 
-      bit_modify(p_reg->cc_enable_register).insert<ccer_polarity_enable_mask_3>(0b11U);
+      bit_modify(p_reg->cc_enable_register)
+        .insert<ccer_polarity_enable_mask_3>(0b01U);
       // bit_modify(p_reg->cc_enable_register)
-      //   .insert<ccer_comp_polarity_enable_mask_3>(0b00U);
+      //   .clear(ccer_comp_polarity_enable_mask_3);
 
       break;
     case 4:
       static constexpr auto ccer_polarity_enable_mask_4 =
         bit_mask::from(12, 13);
-      bit_modify(p_reg->cc_enable_register).insert<ccer_polarity_enable_mask_4>(0b11U);
+      bit_modify(p_reg->cc_enable_register)
+        .insert<ccer_polarity_enable_mask_4>(0b01U);
       break;
   }
 
   // MOE = 1 and OSSR = 0 in the breakdeadtime register
-  bit_modify(p_reg->break_and_deadtime_register).set(main_output_enable);
+
+  // bit_modify(p_reg->break_and_deadtime_register)
+  //   .insert<main_output_enable>(0b1U);
   bit_modify(p_reg->break_and_deadtime_register)
-    .clear(ossr);  // complementary channel stuff
+    .clear(ossr)
+    .set(main_output_enable);  // complementary channel stuff
+
+  return;
 }
 void setup(pwm_pins p_pin)
 {
@@ -108,10 +119,8 @@ void setup(pwm_pins p_pin)
   // set arpe bit to 1 in the cr
   // upcounting active when dir bit in cr1 is low
   // CR1 - set cms bit for edge aligned ness
-  // before starting the counter, the user has to initialize all the registers
-  // by setting the UG bit in the TIMx_EGR register.
   static constexpr auto clock_division = bit_mask::from<8, 9>();
-  static constexpr auto auto_reload_preload_enable = bit_mask::from<7>();
+  // static constexpr auto auto_reload_preload_enable = bit_mask::from<7>();
   static constexpr auto edge_aligned_mode = bit_mask::from<5, 6>();  // set to
                                                                      // 00
   static constexpr auto direction =
@@ -123,10 +132,8 @@ void setup(pwm_pins p_pin)
     bit_mask::from<12, 14>();  // set to 111 for channel2/4 is inactive as long
                                // as timx_cnt < tmx_ccr1
   static constexpr auto counter_enable = bit_mask::from<0>();  // set this to 1
-  static constexpr auto clear_flag = bit_mask::from<1>();  // set this to 1
-                                                               // 
-  // static constexpr auto odd_channel_preload_enable = bit_mask::from<3>();
-  // static constexpr auto even_channel_preload_enable = bit_mask::from<11>();
+  static constexpr auto odd_channel_preload_enable = bit_mask::from<3>();
+  static constexpr auto even_channel_preload_enable = bit_mask::from<11>();
   // static constexpr auto update_generation_enable = bit_mask::from<0>();
 
   peripheral peripheral_id = get_peripheral_id(p_pin);
@@ -134,13 +141,7 @@ void setup(pwm_pins p_pin)
 
   bit_modify(reg->control_register).insert<clock_division>(0b00U);  //
   bit_modify(reg->control_register).insert<edge_aligned_mode>(0b00U);
-  bit_modify(reg->control_register).clear(direction); //direction up
-
-  // before starting the counter, the user must initialize all the registers by
-  // setting the UG bit in the TIMx_EGR register.
-  bit_modify(reg->event_generator_register).set(counter_enable);
-
-  bit_modify(reg->status_register).clear(clear_flag);
+  bit_modify(reg->control_register).clear(direction);
 
   // OCxM bit set : PWM mode 2 - In upcounting, channel 1 is inactive as long as
   // TIMx_CNT<TIMx_CCR1 else active.
@@ -148,34 +149,38 @@ void setup(pwm_pins p_pin)
                                  // to channel
                                  //  set oc1m bit to
     // Preload enable must be done for corresponding OCxPE
-    bit_modify(reg->capture_compare_mode_register).insert<output_compare_odd>(0b111U);
-    // bit_modify(reg->capture_compare_mode_register)
-    //   .set(odd_channel_preload_enable);
+    bit_modify(reg->capture_compare_mode_register)
+      .insert<output_compare_odd>(0b110U);
+    bit_modify(reg->capture_compare_mode_register)
+      .set(odd_channel_preload_enable);
     setup_channel(reg, 1);
     // leaving polarity active low for each channel
   } else if (p_pin == pwm_pins::pa9) {  // channel 2
-    bit_modify(reg->capture_compare_mode_register).insert<output_compare_even>(0b111U);
-    // bit_modify(reg->capture_compare_mode_register)
-    //   .set(even_channel_preload_enable);
+    bit_modify(reg->capture_compare_mode_register)
+      .insert<output_compare_even>(0b110U);
+    bit_modify(reg->capture_compare_mode_register)
+      .set(even_channel_preload_enable);
     setup_channel(reg, 2);
 
   } else if (p_pin == pwm_pins::pa10) {  // channel 3
-    bit_modify(reg->capture_compare_mode_register_2).insert<output_compare_odd>(0b111U);
-    // bit_modify(reg->capture_compare_mode_register_2)
-    //   .set(odd_channel_preload_enable);
+    bit_modify(reg->capture_compare_mode_register_2)
+      .insert<output_compare_odd>(0b110U);
+    bit_modify(reg->capture_compare_mode_register_2)
+      .set(odd_channel_preload_enable);
     setup_channel(reg, 3);
 
   } else if (p_pin == pwm_pins::pa11) {  // channel 4
-    bit_modify(reg->capture_compare_mode_register_2).insert<output_compare_even>(0b111U);
-    // bit_modify(reg->capture_compare_mode_register_2)
-    //   .set(even_channel_preload_enable);
+    bit_modify(reg->capture_compare_mode_register_2)
+      .insert<output_compare_even>(0b110U);
+    bit_modify(reg->capture_compare_mode_register_2)
+      .set(even_channel_preload_enable);
     setup_channel(reg, 4);
   }
 
   // Sets pre-scalar to 0 because (CK_CNT) is equal to fCK_PSC / (PSC[15:0] + 1)
   // This makes is to that initially the frequency of PWM is: clock_freq / ARR
   // value
-  bit_modify(reg->control_register).set(auto_reload_preload_enable);
+  // bit_modify(reg->control_register).set(auto_reload_preload_enable);
   bit_modify(reg->control_register).set(counter_enable);
 
   reg->prescale_register = 0x0U;
@@ -184,6 +189,7 @@ void setup(pwm_pins p_pin)
   reg->counter_register = 0x0U;
 
   //
+  reg->auto_reload_register = 0xFFFF;
 }
 
 }  // namespace
@@ -195,7 +201,7 @@ pwm::pwm(pwm_pins p_pin)
   auto p_id = get_peripheral_id(p_pin);
   auto p_reg = get_pwm_reg(p_id);
   power_on(p_id);
-  power_on(peripheral::afio);
+  // power_on(peripheral::afio);
   switch (p_pin) {
     case pwm_pins::pa10:
       configure_pin({ .port = 'A', .pin = 10 }, push_pull_alternative_output);
@@ -226,9 +232,7 @@ void pwm::driver_frequency(hertz p_frequency)
 {
   auto peripheral_id = get_peripheral_id(m_pin);
   pwm_reg_t* reg = get_pwm_reg(peripheral_id);
-  // mask for the ARR that needs to be set
-  static constexpr auto register_mask = bit_mask::from<0, 15>();
-  // current clock frequency
+
   auto const current_clock = hal::stm32f1::frequency(peripheral_id);
 
   float previous_duty_cycle = get_duty_cycle(m_pin, m_compare_register_addr);
@@ -250,8 +254,8 @@ void pwm::driver_frequency(hertz p_frequency)
     // we have to reduce the ARR value.
     autoreload = current_clock / p_frequency;
   }
-  bit_modify(reg->auto_reload_register).insert<register_mask>(autoreload);
-  bit_modify(reg->prescale_register).insert<register_mask>(prescale);
+  reg->auto_reload_register = autoreload;
+  reg->prescale_register = prescale;
 
   // Update duty cycle according to new frequency
   driver_duty_cycle(previous_duty_cycle);
@@ -260,11 +264,10 @@ void pwm::driver_duty_cycle(float p_duty_cycle)
 {
   auto peripheral_id = get_peripheral_id(m_pin);
   pwm_reg_t* reg = get_pwm_reg(peripheral_id);
-  // current ARR value
-  static constexpr auto ccr_mask = bit_mask::from<0, 15>();
 
   std::uint16_t desired_ccr_value = reg->auto_reload_register * p_duty_cycle;
 
-  bit_modify(*m_compare_register_addr).insert<ccr_mask>(desired_ccr_value);
+  *m_compare_register_addr = desired_ccr_value;
+  return;
 }
 }  // namespace hal::stm32f1
