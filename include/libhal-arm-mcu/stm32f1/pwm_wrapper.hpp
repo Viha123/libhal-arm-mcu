@@ -10,6 +10,11 @@ class advanced_timer;
 template<hal::stm32f1::peripheral select>
 class general_purpose_timer;
 
+/** @brief This class is a wrapper for the pwm class, and manages the pwm
+ * availability of the various different pins, and keeps track of whether a pwm
+ * is available or not. It inherits hal::pwm because this object is returned to
+ * the timer instance and can be used as an hal::pwm in any application.
+ */
 class pwm_wrapper : public hal::pwm
 {
 public:
@@ -35,9 +40,7 @@ private:
               hertz p_clock_freq,
               bool is_advanced,
               hal::u16 pin_num);
-  // frequency
   void driver_frequency(hertz p_frequency) override;
-  // duty cycle
   void driver_duty_cycle(float p_duty_cycle) override;
   // destructor
   hal::stm32_generic::pwm m_pwm;
