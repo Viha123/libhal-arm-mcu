@@ -41,7 +41,7 @@ constexpr bool use_libhal_4_pwm = false;
 
 void initialize_platform(resource_list& p_resources)
 {
-  
+
   using namespace hal::literals;
   p_resources.reset = []() { hal::cortex_m::reset(); };
 
@@ -119,7 +119,8 @@ void initialize_platform(resource_list& p_resources)
   // if constexpr (use_libhal_4_pwm) {
   //   // Use old PWM
   // } else {
-  //   static hal::stm32f1::general_purpose_timer<hal::stm32f1::peripheral::timer2>
+  //   static
+  //   hal::stm32f1::general_purpose_timer<hal::stm32f1::peripheral::timer2>
   //     timer;
   //   static auto timer_pwm_channel =
   //     timer.acquire_pwm16_channel(hal::stm32f1::timer2_pin::pa1);
@@ -130,22 +131,25 @@ void initialize_platform(resource_list& p_resources)
 
   // p_resources.pwm_channel = pwm_channel;
   // p_resources.pwm_frequency = pwm_frequency;
+  static hal::stm32f1::general_purpose_timer<hal::stm32f1::peripheral::timer4>
+    timer;
+  static auto channel1 = hal::stm32f1::timer4_pin::pb6;
+  static auto channel2 = hal::stm32f1::timer4_pin::pb7;
+  static auto encoder = timer.acquire_quadrature_encoder(channel1, channel2);
 
-  // static auto channel1 = hal::stm32f1::timer2_pin::pa2;
-  // static auto channel2 = hal::stm32f1::timer2_pin::pa3;
-  hal::print<1024>(uart1, "before init!!\n");
-  
-  static auto channel1 = hal::stm32f1::pins::pb6;
-  static auto channel2 = hal::stm32f1::pins::pb7;
-  hal::print<1024>(uart1, "pin init!!\n");
+  // hal::print<1024>(uart1, "before init!!\n");
 
-  // void* t2 = reinterpret_cast<void*>(0x4000'0000);
-  void* t4 = reinterpret_cast<void*>(0x4000'0800);
-  
-  static auto encoder = hal::stm32f1::quadrature_encoder(
-    channel1, channel2, hal::stm32f1::peripheral::timer4, t4);
+  // static auto channel1 = hal::stm32f1::pins::pb6;
+  // static auto channel2 = hal::stm32f1::pins::pb7;
+  // hal::print<1024>(uart1, "pin init!!\n");`
+
+  // // void* t2 = reinterpret_cast<void*>(0x4000'0000);
+  // void* t4 = reinterpret_cast<void*>(0x4000'0800);
+
+  // static auto encoder = hal::stm32f1::quadrature_encoder(
+  //   channel1, channel2, hal::stm32f1::peripheral::timer4, t4);
   p_resources.quad_encoder = &encoder;
-  hal::print<1024>(uart1, "encoder init!!\n");
+  // hal::print<1024>(uart1, "encoder init!!\n");
 
   // try {
   //   using namespace std::chrono_literals;

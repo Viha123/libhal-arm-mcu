@@ -57,9 +57,7 @@ struct timer_reg_t
 {
   return reinterpret_cast<timer_reg_t*>(p_reg);
 }
-// [[nodiscard]] peripheral get_peripheral(void* p_reg)
-// {
-// }
+
 void setup_channel(int channel, timer_reg_t* p_reg)
 {
 
@@ -243,7 +241,6 @@ quadrature_encoder::read_t quadrature_encoder::driver_read()
 {
   read_t reading;
   timer_reg_t* timer_register = get_timer_reg(m_reg);
-  [[maybe_unused]] u32 direction = timer_register->control_register;
 
   reading.angle = static_cast<float>(timer_register->counter_register);
   return reading;

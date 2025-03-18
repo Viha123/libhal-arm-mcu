@@ -1,6 +1,7 @@
 #include <libhal-arm-mcu/stm32_generic/pwm.hpp>
 #include <libhal-arm-mcu/stm32f1/constants.hpp>
 #include <libhal-arm-mcu/stm32f1/pwm.hpp>
+#include <libhal-arm-mcu/stm32f1/quadrature_encoder.hpp>
 #include <libhal-arm-mcu/stm32f1/timer.hpp>
 #include <libhal-util/bit.hpp>
 #include <libhal-util/enum.hpp>
@@ -134,6 +135,27 @@ general_purpose_timer<select>::acquire_pwm_group_frequency()
   return { peripheral_to_general_register<select>(), select };
 }
 
+template<peripheral select>
+hal::stm32f1::quadrature_encoder
+general_purpose_timer<select>::acquire_quadrature_encoder(pin_type channel_a,
+                                                          pin_type channel_b)
+{
+  return { static_cast<pins>(channel_a),
+           static_cast<pins>(channel_b),
+           select,
+           peripheral_to_general_register<select>() };
+}
+
+template<peripheral select>
+hal::stm32f1::quadrature_encoder
+advanced_timer<select>::acquire_quadrature_encoder(pin_type channel_a,
+                                                          pin_type channel_b)
+{
+  return { static_cast<pins>(channel_a),
+           static_cast<pins>(channel_b),
+           select,
+           peripheral_to_advanced_register<select>() };
+}
 // Tell the compiler which instances to generate
 template class advanced_timer<peripheral::timer1>;
 template class advanced_timer<peripheral::timer8>;

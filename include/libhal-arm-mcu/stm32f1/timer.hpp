@@ -19,6 +19,7 @@
 #include <libhal-arm-mcu/stm32f1/clock.hpp>
 #include <libhal-arm-mcu/stm32f1/constants.hpp>
 #include <libhal-arm-mcu/stm32f1/pwm.hpp>
+#include <libhal-arm-mcu/stm32f1/quadrature_encoder.hpp>
 #include <libhal-util/bit.hpp>
 #include <libhal-util/enum.hpp>
 #include <libhal/units.hpp>
@@ -269,6 +270,17 @@ public:
    *
    */
   [[nodiscard]] hal::stm32f1::pwm_group_frequency acquire_pwm_group_frequency();
+
+  /**
+   * @brief Acquire an Encoder from the timer
+   * @param channel_a is a channel from a timer that was chosen when
+   * initializing the timer class
+   * @param channel_b is a channel from a timer that was chosen when
+   * initializing the timer class
+   */
+  [[nodiscard]] hal::stm32f1::quadrature_encoder acquire_quadrature_encoder(
+    pin_type channel_a,
+    pin_type channel_b);
 };
 /**
  * @brief This template class takes can do any timer operation for timers 2
@@ -335,6 +347,17 @@ public:
    *
    */
   [[nodiscard]] hal::stm32f1::pwm_group_frequency acquire_pwm_group_frequency();
+
+  /**
+   * @brief Acquire an Encoder from the timer
+   * @param channel_a is a channel from a timer that was chosen when
+   * initializing the timer class
+   * @param channel_b is a channel from a timer that was chosen when
+   * initializing the timer class
+   */
+  [[nodiscard]] hal::stm32f1::quadrature_encoder acquire_quadrature_encoder(
+    pin_type channel_a,
+    pin_type channel_b);
 };
 
 }  // namespace hal::stm32f1
