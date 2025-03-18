@@ -62,7 +62,8 @@ libhal_test_and_make_library(
   src/stm32f1/uart.cpp
   src/stm32f1/spi.cpp
   src/stm32f1/adc.cpp
-
+  src/stm32f1/quadrature_encoder.cpp
+  
   # stm32f411
   src/stm32f411/clock.cpp
   src/stm32f411/dma.cpp

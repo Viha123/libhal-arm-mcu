@@ -32,6 +32,7 @@ libhal_build_demos(
   pwm16
   spi
   blank
+  quadrature_encoder
   # stream_dac
 
   PACKAGES

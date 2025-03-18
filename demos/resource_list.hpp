@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <libhal/rotation_sensor.hpp>
 #include <optional>
 
 #include <libhal/adc.hpp>
@@ -52,6 +53,7 @@ struct resource_list
   std::optional<hal::pwm*> pwm;
   std::optional<hal::pwm16_channel*> pwm_channel;
   std::optional<hal::pwm_group_manager*> pwm_frequency;
+  std::optional<hal::rotation_sensor*> quad_encoder;
   std::optional<hal::spi*> spi;
   std::optional<hal::output_pin*> spi_chip_select;
   std::optional<hal::stream_dac_u8*> stream_dac;

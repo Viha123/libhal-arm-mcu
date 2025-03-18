@@ -20,6 +20,7 @@
 #include <libhal-arm-mcu/stm32f1/constants.hpp>
 #include <libhal-arm-mcu/stm32f1/input_pin.hpp>
 #include <libhal-arm-mcu/stm32f1/output_pin.hpp>
+#include <libhal-arm-mcu/stm32f1/quadrature_encoder.hpp>
 #include <libhal-arm-mcu/stm32f1/spi.hpp>
 #include <libhal-arm-mcu/stm32f1/timer.hpp>
 #include <libhal-arm-mcu/stm32f1/uart.hpp>
@@ -40,6 +41,7 @@ constexpr bool use_libhal_4_pwm = false;
 
 void initialize_platform(resource_list& p_resources)
 {
+  
   using namespace hal::literals;
   p_resources.reset = []() { hal::cortex_m::reset(); };
 
@@ -53,6 +55,7 @@ void initialize_platform(resource_list& p_resources)
 
   static hal::stm32f1::uart uart1(hal::port<1>, hal::buffer<128>);
   p_resources.console = &uart1;
+  hal::print<1024>(uart1, "HI!!\n");
 
   static hal::stm32f1::output_pin led('C', 13);
   p_resources.status_led = &led;
@@ -60,103 +63,122 @@ void initialize_platform(resource_list& p_resources)
   static hal::stm32f1::input_pin input_pin('B', 4);
   p_resources.input_pin = &input_pin;
 
-  static hal::atomic_spin_lock adc_lock;
-  static hal::stm32f1::adc_peripheral_manager adc(
-    hal::stm32f1::adc_peripheral_manager::adc_selection::adc1, adc_lock);
-  static auto pb0 =
-    adc.acquire_channel(hal::stm32f1::adc_peripheral_manager::pins::pb0);
-  p_resources.adc = &pb0;
+  // static hal::atomic_spin_lock adc_lock;
+  // static hal::stm32f1::adc_peripheral_manager adc(
+  //   hal::stm32f1::adc_peripheral_manager::adc_selection::adc1, adc_lock);
+  // static auto pb0 =
+  //   adc.acquire_channel(hal::stm32f1::adc_peripheral_manager::pins::pb0);
+  // p_resources.adc = &pb0;
 
-  static hal::stm32f1::output_pin sda_output_pin('B', 7);
-  static hal::stm32f1::output_pin scl_output_pin('B', 6);
-  static hal::bit_bang_i2c bit_bang_i2c(
-    hal::bit_bang_i2c::pins{
-      .sda = &sda_output_pin,
-      .scl = &scl_output_pin,
-    },
-    steady_clock);
-  p_resources.i2c = &bit_bang_i2c;
+  // static hal::stm32f1::output_pin sda_output_pin('B', 7);
+  // static hal::stm32f1::output_pin scl_output_pin('B', 6);
+  // static hal::bit_bang_i2c bit_bang_i2c(
+  //   hal::bit_bang_i2c::pins{
+  //     .sda = &sda_output_pin,
+  //     .scl = &scl_output_pin,
+  //   },
+  //   steady_clock);
+  // p_resources.i2c = &bit_bang_i2c;
 
-  static hal::stm32f1::output_pin spi_chip_select('A', 4);
-  p_resources.spi_chip_select = &spi_chip_select;
-  static hal::stm32f1::output_pin sck('A', 5);
-  static hal::stm32f1::output_pin copi('A', 6);
-  static hal::stm32f1::input_pin cipo('A', 7);
+  // static hal::stm32f1::output_pin spi_chip_select('A', 4);
+  // p_resources.spi_chip_select = &spi_chip_select;
+  // static hal::stm32f1::output_pin sck('A', 5);
+  // static hal::stm32f1::output_pin copi('A', 6);
+  // static hal::stm32f1::input_pin cipo('A', 7);
 
-  static hal::bit_bang_spi::pins bit_bang_spi_pins{ .sck = &sck,
-                                                    .copi = &copi,
-                                                    .cipo = &cipo };
+  // static hal::bit_bang_spi::pins bit_bang_spi_pins{ .sck = &sck,
+  //                                                   .copi = &copi,
+  //                                                   .cipo = &cipo };
 
-  static hal::spi::settings bit_bang_spi_settings{
-    .clock_rate = 250.0_kHz,
-    .clock_polarity = false,
-    .clock_phase = false,
-  };
+  // static hal::spi::settings bit_bang_spi_settings{
+  //   .clock_rate = 250.0_kHz,
+  //   .clock_polarity = false,
+  //   .clock_phase = false,
+  // };
 
-  hal::spi* spi = nullptr;
+  // hal::spi* spi = nullptr;
 
-  if constexpr (use_bit_bang_spi) {
-    static hal::bit_bang_spi bit_bang_spi(
-      bit_bang_spi_pins, steady_clock, bit_bang_spi_settings);
-    spi = &bit_bang_spi;
-  } else {
-    static hal::stm32f1::spi spi1(hal::bus<1>,
-                                  {
-                                    .clock_rate = 250.0_kHz,
-                                    .clock_polarity = false,
-                                    .clock_phase = false,
-                                  });
-    spi = &spi1;
-  }
-  p_resources.spi = spi;
+  // if constexpr (use_bit_bang_spi) {
+  //   static hal::bit_bang_spi bit_bang_spi(
+  //     bit_bang_spi_pins, steady_clock, bit_bang_spi_settings);
+  //   spi = &bit_bang_spi;
+  // } else {
+  //   static hal::stm32f1::spi spi1(hal::bus<1>,
+  //                                 {
+  //                                   .clock_rate = 250.0_kHz,
+  //                                   .clock_polarity = false,
+  //                                   .clock_phase = false,
+  //                                 });
+  //   spi = &spi1;
+  // }
+  // p_resources.spi = spi;
 
-  hal::pwm16_channel* pwm_channel = nullptr;
-  hal::pwm_group_manager* pwm_frequency = nullptr;
+  // hal::pwm16_channel* pwm_channel = nullptr;
+  // hal::pwm_group_manager* pwm_frequency = nullptr;
 
-  if constexpr (use_libhal_4_pwm) {
-    // Use old PWM
-  } else {
-    static hal::stm32f1::general_purpose_timer<hal::stm32f1::peripheral::timer2>
-      timer;
-    static auto timer_pwm_channel =
-      timer.acquire_pwm16_channel(hal::stm32f1::timer2_pin::pa1);
-    pwm_channel = &timer_pwm_channel;
-    static auto timer1_pwm_frequency = timer.acquire_pwm_group_frequency();
-    pwm_frequency = &timer1_pwm_frequency;
-  }
+  // if constexpr (use_libhal_4_pwm) {
+  //   // Use old PWM
+  // } else {
+  //   static hal::stm32f1::general_purpose_timer<hal::stm32f1::peripheral::timer2>
+  //     timer;
+  //   static auto timer_pwm_channel =
+  //     timer.acquire_pwm16_channel(hal::stm32f1::timer2_pin::pa1);
+  //   pwm_channel = &timer_pwm_channel;
+  //   static auto timer1_pwm_frequency = timer.acquire_pwm_group_frequency();
+  //   pwm_frequency = &timer1_pwm_frequency;
+  // }
 
-  p_resources.pwm_channel = pwm_channel;
-  p_resources.pwm_frequency = pwm_frequency;
+  // p_resources.pwm_channel = pwm_channel;
+  // p_resources.pwm_frequency = pwm_frequency;
 
-  try {
-    using namespace std::chrono_literals;
-    static hal::stm32f1::can_peripheral_manager can(
-      100_kHz, steady_clock, 1ms, hal::stm32f1::can_pins::pb9_pb8);
+  // static auto channel1 = hal::stm32f1::timer2_pin::pa2;
+  // static auto channel2 = hal::stm32f1::timer2_pin::pa3;
+  hal::print<1024>(uart1, "before init!!\n");
+  
+  static auto channel1 = hal::stm32f1::pins::pb6;
+  static auto channel2 = hal::stm32f1::pins::pb7;
+  hal::print<1024>(uart1, "pin init!!\n");
 
-    // Self test allows the can transceiver to see its own messages as if they
-    // were received on the bus. This also prevents messages from being received
-    // from the bus. Set to `false` if you want to get actual CAN messages from
-    // the bus and not the device's own messages.
-    can.enable_self_test(true);
+  // void* t2 = reinterpret_cast<void*>(0x4000'0000);
+  void* t4 = reinterpret_cast<void*>(0x4000'0800);
+  
+  static auto encoder = hal::stm32f1::quadrature_encoder(
+    channel1, channel2, hal::stm32f1::peripheral::timer4, t4);
+  p_resources.quad_encoder = &encoder;
+  hal::print<1024>(uart1, "encoder init!!\n");
 
-    static std::array<hal::can_message, 8> receive_buffer{};
-    static auto can_transceiver = can.acquire_transceiver(receive_buffer);
-    p_resources.can_transceiver = &can_transceiver;
+  // try {
+  //   using namespace std::chrono_literals;
+  //   static hal::stm32f1::can_peripheral_manager can(
+  //     100_kHz, steady_clock, 1ms, hal::stm32f1::can_pins::pb9_pb8);
 
-    static auto can_bus_manager = can.acquire_bus_manager();
-    p_resources.can_bus_manager = &can_bus_manager;
+  //   // Self test allows the can transceiver to see its own messages as if
+  //   they
+  //   // were received on the bus. This also prevents messages from being
+  //   received
+  //   // from the bus. Set to `false` if you want to get actual CAN messages
+  //   from
+  //   // the bus and not the device's own messages.
+  //   can.enable_self_test(true);
 
-    static auto can_interrupt = can.acquire_interrupt();
-    p_resources.can_interrupt = &can_interrupt;
+  //   static std::array<hal::can_message, 8> receive_buffer{};
+  //   static auto can_transceiver = can.acquire_transceiver(receive_buffer);
+  //   p_resources.can_transceiver = &can_transceiver;
 
-    // Allow all messages
-    static auto mask_id_filters_x2 = can.acquire_mask_filter();
-    mask_id_filters_x2.filter[0].allow({ { .id = 0, .mask = 0 } });
-  } catch (hal::timed_out&) {
-    hal::print(
-      uart1,
-      "⚠️ CAN peripheral timeout error!\n"
-      "- CAN disabled - check CANRX/CANTX connections to transceiver.\n"
-      "- System will operate normally if CAN is NOT required.\n\n");
-  }
+  //   static auto can_bus_manager = can.acquire_bus_manager();
+  //   p_resources.can_bus_manager = &can_bus_manager;
+
+  //   static auto can_interrupt = can.acquire_interrupt();
+  //   p_resources.can_interrupt = &can_interrupt;
+
+  //   // Allow all messages
+  //   static auto mask_id_filters_x2 = can.acquire_mask_filter();
+  //   mask_id_filters_x2.filter[0].allow({ { .id = 0, .mask = 0 } });
+  // } catch (hal::timed_out&) {
+  //   hal::print(
+  //     uart1,
+  //     "⚠️ CAN peripheral timeout error!\n"
+  //     "- CAN disabled - check CANRX/CANTX connections to transceiver.\n"
+  //     "- System will operate normally if CAN is NOT required.\n\n");
+  // }
 }
