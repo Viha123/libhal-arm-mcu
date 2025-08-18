@@ -20,6 +20,7 @@
 #include <libhal-arm-mcu/stm32f1/constants.hpp>
 #include <libhal-arm-mcu/stm32f1/input_pin.hpp>
 #include <libhal-arm-mcu/stm32f1/output_pin.hpp>
+#include <libhal-arm-mcu/stm32f1/pwm.hpp>
 #include <libhal-arm-mcu/stm32f1/quadrature_encoder.hpp>
 #include <libhal-arm-mcu/stm32f1/spi.hpp>
 #include <libhal-arm-mcu/stm32f1/timer.hpp>
@@ -131,11 +132,23 @@ void initialize_platform(resource_list& p_resources)
 
   // p_resources.pwm_channel = pwm_channel;
   // p_resources.pwm_frequency = pwm_frequency;
-  static hal::stm32f1::general_purpose_timer<hal::stm32f1::peripheral::timer4>
+  // TIMER 2 channel 1 and 2 tested and works
+
+  hal::pwm_group_manager* pwm_frequency1 = nullptr;
+  static hal::stm32f1::general_purpose_timer<hal::stm32f1::peripheral::timer2>
     timer;
-  static auto channel1 = hal::stm32f1::timer4_pin::pb6;
-  static auto channel2 = hal::stm32f1::timer4_pin::pb7;
+  static hal::stm32f1::advanced_timer<hal::stm32f1::peripheral::timer1>
+    timer1;
+  static hal::stm32f1::pwm16_channel p_a_low =
+    timer1.acquire_pwm16_channel(hal::stm32f1::timer1_pin::pa8);  // INLB (A0)
+  static auto channel1 = hal::stm32f1::timer2_pin::pa2;
+  static auto channel2 = hal::stm32f1::timer2_pin::pa3;
   static auto encoder = timer.acquire_quadrature_encoder(channel1, channel2);
+  hal::print(uart1, "encoder init\n");
+  static auto timer1_frequency = timer1.acquire_pwm_group_frequency();
+  pwm_frequency1 = &timer1_frequency;
+  // pwm_frequency1->frequency(1_kHz);
+  pwm_frequency1->frequency(20_kHz);  // setting it to the same thing for now
 
   // hal::print<1024>(uart1, "before init!!\n");
 
@@ -149,6 +162,9 @@ void initialize_platform(resource_list& p_resources)
   // static auto encoder = hal::stm32f1::quadrature_encoder(
   //   channel1, channel2, hal::stm32f1::peripheral::timer4, t4);
   p_resources.quad_encoder = &encoder;
+  p_resources.pwm_channel = &p_a_low;;
+  p_resources.pwm_frequency = pwm_frequency1;
+
   // hal::print<1024>(uart1, "encoder init!!\n");
 
   // try {

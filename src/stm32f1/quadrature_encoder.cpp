@@ -1,3 +1,4 @@
+#include <libhal/error.hpp>
 #include <utility>
 
 #include "libhal-arm-mcu/stm32f1/constants.hpp"
@@ -117,11 +118,12 @@ quadrature_encoder::quadrature_encoder(hal::stm32f1::pins p_pin1,
 
   u8 channel_a = get_channel_from_pin(p_pin1, p_select);
   u8 channel_b = get_channel_from_pin(p_pin2, p_select);
-
+  if (channel_a >= 3 || channel_b >= 3) {
+    // only channels 1 and 2 are allowed for quadrature encoder mode.
+    hal::safe_throw(hal::operation_not_permitted(this));
+  }
   m_encoder.initialize(
     hal::unsafe{}, { .channel_a = channel_a, .channel_b = channel_b }, p_reg);
-  // handle timer availability.
-  // should not user the other timer channels
 }
 
 quadrature_encoder::quadrature_encoder(hal::unsafe,

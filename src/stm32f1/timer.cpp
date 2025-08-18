@@ -29,6 +29,7 @@ inline void* timer13 = reinterpret_cast<void*>(0x4000'1C00);
 inline void* timer14 = reinterpret_cast<void*>(0x4000'2000);
 
 namespace {
+hal::u16 timer_availability = 0; 
 template<peripheral select>
 void* peripheral_to_advanced_register()
 {
@@ -68,6 +69,38 @@ void* peripheral_to_general_register()
   }
   return reg;
 }
+
+template<peripheral select>
+u16 peripheral_to_bit_index()
+{
+  u16 index = 0;
+  if constexpr (select == peripheral::timer1) {
+    index = 0;
+  } else if constexpr (select == peripheral::timer2) {
+    index = 1;
+  } else if constexpr (select == peripheral::timer3) {
+    index = 2;
+  } else if constexpr (select == peripheral::timer4) {
+    index = 3;
+  } else if constexpr (select == peripheral::timer5) {
+    index = 4;
+  } else if constexpr (select == peripheral::timer8) {
+    index = 5;
+  } else if constexpr (select == peripheral::timer9) {
+    index = 6;
+  } else if constexpr (select == peripheral::timer10) {
+    index = 7;
+  } else if constexpr (select == peripheral::timer11) {
+    index = 8;
+  } else if constexpr (select == peripheral::timer12) {
+    index = 9;
+  } else if constexpr (select == peripheral::timer13) {
+    index = 10;
+  } else {
+    index = 11;
+  }
+  return index;
+}
 }  // namespace
 
 template<peripheral select>
@@ -85,16 +118,19 @@ general_purpose_timer<select>::general_purpose_timer()
 template<peripheral select>
 hal::stm32f1::pwm advanced_timer<select>::acquire_pwm(pin_type p_pin)
 {
+  auto const idx = bit_mask::from(peripheral_to_bit_index<select>());
+  bit_modify(timer_availability).set(idx);
   return { peripheral_to_advanced_register<select>(),
            select,
            true,
-           static_cast<pins>(p_pin) };
+           static_cast<pins>(p_pin)};
 }
 
 template<peripheral select>
 hal::stm32f1::pwm general_purpose_timer<select>::acquire_pwm(pin_type p_pin)
 {
-
+  auto const idx = bit_mask::from(peripheral_to_bit_index<select>());
+  bit_modify(timer_availability).set(idx);
   return { peripheral_to_general_register<select>(),
            select,
            false,
@@ -105,6 +141,8 @@ template<peripheral select>
 hal::stm32f1::pwm16_channel advanced_timer<select>::acquire_pwm16_channel(
   pin_type p_pin)
 {
+  auto const idx = bit_mask::from(peripheral_to_bit_index<select>());
+  bit_modify(timer_availability).set(idx);
   return { peripheral_to_advanced_register<select>(),
            select,
            true,
@@ -115,6 +153,8 @@ template<peripheral select>
 hal::stm32f1::pwm16_channel
 general_purpose_timer<select>::acquire_pwm16_channel(pin_type p_pin)
 {
+  auto const idx = bit_mask::from(peripheral_to_bit_index<select>());
+  bit_modify(timer_availability).set(idx);
   return { peripheral_to_general_register<select>(),
            select,
            false,
@@ -125,6 +165,8 @@ template<peripheral select>
 hal::stm32f1::pwm_group_frequency
 advanced_timer<select>::acquire_pwm_group_frequency()
 {
+  auto const idx = bit_mask::from(peripheral_to_bit_index<select>());
+  bit_modify(timer_availability).set(idx);
   return { peripheral_to_advanced_register<select>(), select };
 }
 
@@ -132,6 +174,8 @@ template<peripheral select>
 hal::stm32f1::pwm_group_frequency
 general_purpose_timer<select>::acquire_pwm_group_frequency()
 {
+  auto const idx = bit_mask::from(peripheral_to_bit_index<select>());
+  bit_modify(timer_availability).set(idx);
   return { peripheral_to_general_register<select>(), select };
 }
 
@@ -140,6 +184,12 @@ hal::stm32f1::quadrature_encoder
 general_purpose_timer<select>::acquire_quadrature_encoder(pin_type channel_a,
                                                           pin_type channel_b)
 {
+  auto const idx = bit_mask::from(peripheral_to_bit_index<select>());
+  if (not hal::bit_extract(idx, timer_availability)) {
+    bit_modify(timer_availability).set(idx);
+  } else {
+    hal::safe_throw(hal::device_or_resource_busy(nullptr));
+  }
   return { static_cast<pins>(channel_a),
            static_cast<pins>(channel_b),
            select,
@@ -151,6 +201,12 @@ hal::stm32f1::quadrature_encoder
 advanced_timer<select>::acquire_quadrature_encoder(pin_type channel_a,
                                                           pin_type channel_b)
 {
+  auto const idx = bit_mask::from(peripheral_to_bit_index<select>());
+  if (not hal::bit_extract(idx, timer_availability)) {
+    bit_modify(timer_availability).set(idx);
+  } else {
+    hal::safe_throw(hal::device_or_resource_busy(nullptr));
+  }
   return { static_cast<pins>(channel_a),
            static_cast<pins>(channel_b),
            select,

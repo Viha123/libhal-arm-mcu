@@ -354,6 +354,9 @@ public:
    * initializing the timer class
    * @param channel_b is a channel from a timer that was chosen when
    * initializing the timer class
+   *
+   * @throws hal::operation_not_permitted - If the application attempts to
+   * acquire a pin with channel 3 or 4. Datasheet only describes ch1 and 2.
    */
   [[nodiscard]] hal::stm32f1::quadrature_encoder acquire_quadrature_encoder(
     pin_type channel_a,

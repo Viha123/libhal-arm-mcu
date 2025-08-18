@@ -17,6 +17,12 @@ public:
   template<hal::stm32f1::peripheral select>
   friend class hal::stm32f1::general_purpose_timer;
 
+  quadrature_encoder(quadrature_encoder const& p_other) = delete;
+  quadrature_encoder& operator=(quadrature_encoder const& p_other) = delete;
+  quadrature_encoder(quadrature_encoder&& p_other) noexcept = default;
+  quadrature_encoder& operator=(quadrature_encoder&& p_other) noexcept =
+    default;
+  ~quadrature_encoder() = default;
   /** @brief This is the unsafe way to construct the encoder object.
    *
    * It is marked unsafe because the quadrature_encoder must be constructed
