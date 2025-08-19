@@ -29,7 +29,10 @@ inline void* timer13 = reinterpret_cast<void*>(0x4000'1C00);
 inline void* timer14 = reinterpret_cast<void*>(0x4000'2000);
 
 namespace {
-hal::u16 timer_availability = 0; 
+hal::u16 encoder_availability =
+  0;  // only quadrature_encoder will change the value of this.
+hal::u16 pwm_availability;  // pwm will change the value of this
+
 template<peripheral select>
 void* peripheral_to_advanced_register()
 {
@@ -101,6 +104,26 @@ u16 peripheral_to_bit_index()
   }
   return index;
 }
+template<peripheral select>
+bool can_acquire_pwm(bit_mask const timer_idx)
+{
+  // pwm can be acquired as long as an encoder is not being used for that
+  // peripheral further channel specific checks are done in pwm
+  // class.
+  if (hal::bit_extract(timer_idx, encoder_availability))
+    return false;
+  return true;
+}
+
+template<peripheral select>
+bool can_acquire_encoder(bit_mask const timer_idx)
+{
+  if (hal::bit_extract(timer_idx, encoder_availability))
+    return false;
+  if (hal::bit_extract(timer_idx, pwm_availability))
+    return false;
+  return true;
+}
 }  // namespace
 
 template<peripheral select>
@@ -118,19 +141,27 @@ general_purpose_timer<select>::general_purpose_timer()
 template<peripheral select>
 hal::stm32f1::pwm advanced_timer<select>::acquire_pwm(pin_type p_pin)
 {
-  auto const idx = bit_mask::from(peripheral_to_bit_index<select>());
-  bit_modify(timer_availability).set(idx);
+  auto const timer_idx = bit_mask::from(peripheral_to_bit_index<select>());
+  if (can_acquire_pwm<select>(timer_idx)) {
+    bit_modify(pwm_availability).set(timer_idx);
+  } else {
+    hal::safe_throw(hal::device_or_resource_busy(this));
+  }
   return { peripheral_to_advanced_register<select>(),
            select,
            true,
-           static_cast<pins>(p_pin)};
+           static_cast<pins>(p_pin) };
 }
 
 template<peripheral select>
 hal::stm32f1::pwm general_purpose_timer<select>::acquire_pwm(pin_type p_pin)
 {
-  auto const idx = bit_mask::from(peripheral_to_bit_index<select>());
-  bit_modify(timer_availability).set(idx);
+  auto const timer_idx = bit_mask::from(peripheral_to_bit_index<select>());
+  if (can_acquire_pwm<select>(timer_idx)) {
+    bit_modify(pwm_availability).set(timer_idx);
+  } else {
+    hal::safe_throw(hal::device_or_resource_busy(this));
+  }
   return { peripheral_to_general_register<select>(),
            select,
            false,
@@ -141,8 +172,12 @@ template<peripheral select>
 hal::stm32f1::pwm16_channel advanced_timer<select>::acquire_pwm16_channel(
   pin_type p_pin)
 {
-  auto const idx = bit_mask::from(peripheral_to_bit_index<select>());
-  bit_modify(timer_availability).set(idx);
+  auto const timer_idx = bit_mask::from(peripheral_to_bit_index<select>());
+  if (can_acquire_pwm<select>(timer_idx)) {
+    bit_modify(pwm_availability).set(timer_idx);
+  } else {
+    hal::safe_throw(hal::device_or_resource_busy(this));
+  }
   return { peripheral_to_advanced_register<select>(),
            select,
            true,
@@ -153,8 +188,12 @@ template<peripheral select>
 hal::stm32f1::pwm16_channel
 general_purpose_timer<select>::acquire_pwm16_channel(pin_type p_pin)
 {
-  auto const idx = bit_mask::from(peripheral_to_bit_index<select>());
-  bit_modify(timer_availability).set(idx);
+  auto const timer_idx = bit_mask::from(peripheral_to_bit_index<select>());
+  if (can_acquire_pwm<select>(timer_idx)) {
+    bit_modify(pwm_availability).set(timer_idx);
+  } else {
+    hal::safe_throw(hal::device_or_resource_busy(this));
+  }
   return { peripheral_to_general_register<select>(),
            select,
            false,
@@ -165,8 +204,12 @@ template<peripheral select>
 hal::stm32f1::pwm_group_frequency
 advanced_timer<select>::acquire_pwm_group_frequency()
 {
-  auto const idx = bit_mask::from(peripheral_to_bit_index<select>());
-  bit_modify(timer_availability).set(idx);
+  auto const timer_idx = bit_mask::from(peripheral_to_bit_index<select>());
+  if (can_acquire_pwm<select>(timer_idx)) {
+    bit_modify(pwm_availability).set(timer_idx);
+  } else {
+    hal::safe_throw(hal::device_or_resource_busy(this));
+  }
   return { peripheral_to_advanced_register<select>(), select };
 }
 
@@ -174,8 +217,12 @@ template<peripheral select>
 hal::stm32f1::pwm_group_frequency
 general_purpose_timer<select>::acquire_pwm_group_frequency()
 {
-  auto const idx = bit_mask::from(peripheral_to_bit_index<select>());
-  bit_modify(timer_availability).set(idx);
+  auto const timer_idx = bit_mask::from(peripheral_to_bit_index<select>());
+  if (can_acquire_pwm<select>(timer_idx)) {
+    bit_modify(pwm_availability).set(timer_idx);
+  } else {
+    hal::safe_throw(hal::device_or_resource_busy(this));
+  }
   return { peripheral_to_general_register<select>(), select };
 }
 
@@ -185,8 +232,8 @@ general_purpose_timer<select>::acquire_quadrature_encoder(pin_type channel_a,
                                                           pin_type channel_b)
 {
   auto const idx = bit_mask::from(peripheral_to_bit_index<select>());
-  if (not hal::bit_extract(idx, timer_availability)) {
-    bit_modify(timer_availability).set(idx);
+  if (can_acquire_encoder<select>(idx)) {
+    bit_modify(encoder_availability).set(idx);
   } else {
     hal::safe_throw(hal::device_or_resource_busy(nullptr));
   }
@@ -199,11 +246,11 @@ general_purpose_timer<select>::acquire_quadrature_encoder(pin_type channel_a,
 template<peripheral select>
 hal::stm32f1::quadrature_encoder
 advanced_timer<select>::acquire_quadrature_encoder(pin_type channel_a,
-                                                          pin_type channel_b)
+                                                   pin_type channel_b)
 {
   auto const idx = bit_mask::from(peripheral_to_bit_index<select>());
-  if (not hal::bit_extract(idx, timer_availability)) {
-    bit_modify(timer_availability).set(idx);
+  if (can_acquire_encoder<select>(idx)) {
+    bit_modify(encoder_availability).set(idx);
   } else {
     hal::safe_throw(hal::device_or_resource_busy(nullptr));
   }
