@@ -23,6 +23,7 @@
 #include <libhal/input_pin.hpp>
 #include <libhal/interrupt_pin.hpp>
 #include <libhal/output_pin.hpp>
+#include <libhal/rotation_sensor.hpp>
 #include <libhal/pointers.hpp>
 #include <libhal/pwm.hpp>
 #include <libhal/serial.hpp>
@@ -91,7 +92,7 @@ hal::v5::strong_ptr<hal::output_pin> spi_chip_select();
 hal::v5::strong_ptr<hal::stream_dac_u8> stream_dac();
 hal::v5::strong_ptr<hal::dac> dac();
 hal::v5::strong_ptr<custom::watchdog> watchdog();
-
+hal::v5::strong_ptr<hal::rotation_sensor> quadrature_encoder();
 inline void reset()
 {
   hal::cortex_m::reset();

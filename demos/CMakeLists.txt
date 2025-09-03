@@ -33,6 +33,7 @@ libhal_build_demos(
   watchdog
   # stream_dac
   timer
+  quadrature_encoder
 
   PACKAGES
   minimp3

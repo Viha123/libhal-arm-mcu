@@ -35,6 +35,7 @@
 #include <libhal-util/serial.hpp>
 #include <libhal-util/steady_clock.hpp>
 #include <libhal/pwm.hpp>
+#include <libhal/rotation_sensor.hpp>
 #include <libhal/units.hpp>
 
 #include <libhal/pointers.hpp>
@@ -147,6 +148,12 @@ auto& timer1()
   return timer1;
 }
 
+auto& timer2()
+{
+  static hal::stm32f1::general_purpose_timer<st_peripheral::timer2> timer2{};
+  return timer2;
+}
+
 hal::v5::strong_ptr<hal::timer> timed_interrupt()
 {
 #if 0
@@ -179,6 +186,14 @@ hal::v5::strong_ptr<hal::pwm_group_manager> pwm_frequency()
   auto timer_pwm_frequency = timer1().acquire_pwm_group_frequency();
   return hal::v5::make_strong_ptr<decltype(timer_pwm_frequency)>(
     driver_allocator(), std::move(timer_pwm_frequency));
+}
+
+hal::v5::strong_ptr<hal::rotation_sensor> quadrature_encoder()
+{
+  auto encoder = timer2().acquire_quadrature_encoder(
+    hal::stm32f1::timer2_pin::pa0, hal::stm32f1::timer2_pin::pa1);
+  return hal::v5::make_strong_ptr<decltype(encoder)>(driver_allocator(),
+                                                     std::move(encoder));
 }
 
 hal::v5::strong_ptr<hal::can_transceiver> can_transceiver()
